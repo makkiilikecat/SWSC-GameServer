@@ -21,15 +21,20 @@ const (
 	TokenRejectedCode = 1008
 
 	// 環境変数名を定数として定義 (タイプミス防止、管理容易化)
-	wsURLEnvKey                    = "WS_URL"                         // WebSocketサーバーのURL
-	serverExePathEnvKey            = "SERVER_EXE_PATH"                // ゲームサーバー実行ファイルのパス
-	tokenEnvKey                    = "TOKEN"                          // WebSocket接続認証用トークン
-	minPortEnvKey                  = "MIN_PORT"                       // 使用するポート番号の最小値
-	maxPortEnvKey                  = "MAX_PORT"                       // 使用するポート番号の最大値
+	wsURLEnvKey                       = "WS_URL"                         // WebSocketサーバーのURL
+	serverExePathEnvKey               = "SERVER_EXE_PATH"                // ゲームサーバー実行ファイルのパス
+	tokenEnvKey                       = "TOKEN"                          // WebSocket接続認証用トークン
+	minPortEnvKey                     = "MIN_PORT"                       // 使用するポート番号の最小値
+	maxPortEnvKey                     = "MAX_PORT"                       // 使用するポート番号の最大値
 	workshopPlaylistsInstallDirEnvKey = "WORKSHOP_PLAYLISTS_INSTALL_DIR" // ワークショップのプレイリスト(アドオン)をインストールするディレクトリパス
 	workshopModsInstallDirEnvKey      = "WORKSHOP_MODS_INSTALL_DIR"      // ワークショップのModをインストールするディレクトリパス
-	steamCmdPathEnvKey             = "STEAMCMD_PATH"                  // SteamCMD実行ファイルのパス
-	gameAppIDEnvKey                = "GAME_APPID"                     // 対象ゲームのSteam App ID
+	steamCmdPathEnvKey                = "STEAMCMD_PATH"                  // SteamCMD実行ファイルのパス
+	gameAppIDEnvKey                   = "GAME_APPID"                     // 対象ゲームのSteam App ID
+)
+
+const (
+	fallBackGameAppID = "573090"
+	fallBackWsURL     = "wss://sw-server.makkii.jp"
 )
 
 // --- グローバル設定変数 ---
@@ -75,7 +80,7 @@ func LoadConfig() {
 	// WebSocket URL の読み込みと必須チェック
 	WsURL = os.Getenv(wsURLEnvKey)
 	if WsURL == "" {
-		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' が設定されていません。", wsURLEnvKey)
+		WsURL = fallBackWsURL
 	}
 
 	// サーバー実行ファイルパスの読み込みと必須チェック
@@ -83,10 +88,10 @@ func LoadConfig() {
 	if ServerExePath == "" {
 		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' が設定されていません。", serverExePathEnvKey)
 	}
-	// オプション: ファイルの存在確認 (必要に応じてコメント解除)
-	// if _, err := os.Stat(ServerExePath); os.IsNotExist(err) {
-	//	 log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' で指定されたファイル '%s' が見つかりません。", serverExePathEnvKey, ServerExePath)
-	// }
+	// ファイルの存在確認
+	if _, err := os.Stat(ServerExePath); os.IsNotExist(err) {
+		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' で指定されたファイル '%s' が見つかりません。", serverExePathEnvKey, ServerExePath)
+	}
 
 	// 認証トークンの読み込みと必須チェック
 	AuthToken = os.Getenv(tokenEnvKey)
@@ -120,38 +125,38 @@ func LoadConfig() {
 	if WorkshopPlaylistsInstallDir == "" {
 		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' が設定されていません。", workshopPlaylistsInstallDirEnvKey)
 	}
-	// オプション: パスが有効かどうかの簡易チェック (例: 絶対パスか) (必要に応じてコメント解除)
-	// if !filepath.IsAbs(WorkshopPlaylistsInstallDir) {
-	//	 log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' ('%s') は絶対パスで指定する必要があります。", workshopPlaylistsInstallDirEnvKey, WorkshopPlaylistsInstallDir)
-	// }
+	// パスが有効かどうかの簡易チェック
+	if !filepath.IsAbs(WorkshopPlaylistsInstallDir) {
+		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' ('%s') は絶対パスで指定する必要があります。", workshopPlaylistsInstallDirEnvKey, WorkshopPlaylistsInstallDir)
+	}
 
 	// ワークショップ MOD ディレクトリの読み込みと必須チェック
 	WorkshopModsInstallDir = os.Getenv(workshopModsInstallDirEnvKey)
 	if WorkshopModsInstallDir == "" {
 		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' が設定されていません。", workshopModsInstallDirEnvKey)
 	}
-	// オプション: パスが有効かどうかの簡易チェック (必要に応じてコメント解除)
-	// if !filepath.IsAbs(WorkshopModsInstallDir) {
-	//	 log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' ('%s') は絶対パスで指定する必要があります。", workshopModsInstallDirEnvKey, WorkshopModsInstallDir)
-	// }
+	// パスが有効かどうかの簡易チェック
+	if !filepath.IsAbs(WorkshopModsInstallDir) {
+		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' ('%s') は絶対パスで指定する必要があります。", workshopModsInstallDirEnvKey, WorkshopModsInstallDir)
+	}
 
 	// SteamCMD パスの読み込みと必須チェック
 	SteamCmdPath = os.Getenv(steamCmdPathEnvKey)
 	if SteamCmdPath == "" {
 		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' が設定されていません。", steamCmdPathEnvKey)
 	}
-	// オプション: ファイルの存在確認 (必要に応じてコメント解除)
-	// if _, err := os.Stat(SteamCmdPath); os.IsNotExist(err) {
-	//	 log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' で指定されたファイル '%s' が見つかりません。", steamCmdPathEnvKey, SteamCmdPath)
-	// }
+	// ファイルの存在確認
+	if _, err := os.Stat(SteamCmdPath); os.IsNotExist(err) {
+		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' で指定されたファイル '%s' が見つかりません。", steamCmdPathEnvKey, SteamCmdPath)
+	}
 
 	// ゲーム App ID の読み込み、必須チェック、数値変換チェック
 	GameAppID = os.Getenv(gameAppIDEnvKey)
 	if GameAppID == "" {
-		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' が設定されていません。", gameAppIDEnvKey)
+		GameAppID = fallBackGameAppID
 	}
 	if _, err := strconv.Atoi(GameAppID); err != nil { // App IDが数値形式であるかを確認
-		log.Fatalf("[設定] 致命的エラー: 環境変数 '%s' ('%s') が有効な数値 (App ID) ではありません: %v", gameAppIDEnvKey, GameAppID, err)
+		GameAppID = fallBackGameAppID
 	}
 
 	// 3. ポート範囲の論理的な検証
@@ -168,12 +173,12 @@ func LoadConfig() {
 	// 4. 読み込み完了ログの出力
 	// 読み込んだ設定値をコンソールに出力する (トークン自体はセキュリティのため出力しない)
 	log.Println("[設定] 設定の読み込みと検証が完了しました:")
-	log.Printf("  WebSocket URL (%s): %s", wsURLEnvKey, WsURL)
+	if WsURL != fallBackWsURL {log.Printf("  WebSocket URL (%s): %s", wsURLEnvKey, WsURL)}
 	log.Printf("  サーバー実行ファイルパス (%s): %s", serverExePathEnvKey, ServerExePath)
 	log.Printf("  認証トークン (%s): 設定済み", tokenEnvKey) // 値自体は表示しない
 	log.Printf("  ポート範囲 (%s-%s): %d - %d", minPortEnvKey, maxPortEnvKey, MinPort, MaxPort)
 	log.Printf("  ワークショップ プレイリスト ディレクトリ (%s): %s", workshopPlaylistsInstallDirEnvKey, WorkshopPlaylistsInstallDir)
 	log.Printf("  ワークショップ MOD ディレクトリ (%s): %s", workshopModsInstallDirEnvKey, WorkshopModsInstallDir)
 	log.Printf("  SteamCMD パス (%s): %s", steamCmdPathEnvKey, SteamCmdPath)
-	log.Printf("  ゲーム App ID (%s): %s", gameAppIDEnvKey, GameAppID)
+	if GameAppID != fallBackGameAppID {log.Printf("  ゲーム App ID (%s): %s", gameAppIDEnvKey, GameAppID)}
 }

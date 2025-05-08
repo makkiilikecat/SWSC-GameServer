@@ -15,7 +15,6 @@ var (
 func initializePortManager() {
 	usedPorts = make(map[int]bool)
 	log.Println("[ポート管理] ポートマネージャーを初期化しました。")
-	// TODO: 起動時に config ディレクトリをスキャンして既存のポートを usedPorts に登録する処理を追加？
 }
 
 // 指定範囲内で利用可能なポートを探す
